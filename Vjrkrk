@@ -1,0 +1,84 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+
+#define OLED_ADDR 0x3C
+#define SDA_PIN 8
+#define SCL_PIN 9
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+// 3 dòng chat giữ lịch sử
+String chatLine[3] = {"", "", ""};
+
+void setup() {
+  Serial.begin(115200);
+
+  Wire.begin(SDA_PIN, SCL_PIN);
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
+    Serial.println("OLED ERROR!");
+    while (1);
+  }
+
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+
+  chatLine[0] = "DashAI Mochi";
+  chatLine[1] = "Ready!";
+  chatLine[2] = "Send text...";
+
+  updateOLED();
+}
+
+void loop() {
+  if (Serial.available()) {
+    String user = Serial.readStringUntil('\n');
+    user.trim();
+
+    // Dời lịch sử chat
+    chatLine[0] = chatLine[1];
+    chatLine[1] = chatLine[2];
+    chatLine[2] = "U: " + user;
+
+    updateOLED();
+    delay(300);
+
+    String reply = aiReply(user);
+
+    chatLine[0] = chatLine[1];
+    chatLine[1] = chatLine[2];
+    chatLine[2] = "AI: " + reply;
+
+    updateOLED();
+  }
+}
+
+void updateOLED() {
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.println(chatLine[0]);
+  display.println(chatLine[1]);
+  display.println(chatLine[2]);
+  display.display();
+}
+
+// AI trả lời siêu đơn giản
+String aiReply(String inp) {
+  if (inp.length() == 0) return "Hmm?";
+
+  if (inp.indexOf("hi") >= 0 || inp.indexOf("hello") >= 0)
+    return "Xin chao ^^";
+
+  if (inp.indexOf("ten") >= 0)
+    return "Tui la Mochi!";
+
+  if (inp.indexOf("bye") >= 0)
+    return "Tam biet nhe!";
+
+  return "Ban vua noi: " + inp;
+}
